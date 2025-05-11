@@ -30,12 +30,50 @@
             z-index: 10;
         }
     </style>
+    <style>
+        #rotateOverlay {
+            display: none;
+            position: fixed;
+            z-index: 100000;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(20,20,20,0.97);
+            color: white;
+            font-family: monospace;
+            font-size: 2em;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #rotateOverlay.show {
+            display: flex;
+        }
+
+    </style>
 </head>
 <body>
     <div id="hud">
 
     </div>
+    <div id="rotateOverlay">
+        Please rotate your device<br>to play in landscape mode
+    </div>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="game.js"></script> 
+    <script src="game.js"></script>
+    <script>
+    function checkOrientation() {
+        const overlay = document.getElementById('rotateOverlay');
+        // Detect if on mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile && window.innerHeight > window.innerWidth) {
+            overlay.classList.add('show');
+        } else {
+            overlay.classList.remove('show');
+        }
+    }
+    window.addEventListener('orientationchange', checkOrientation);
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('DOMContentLoaded', checkOrientation);
+    </script>
 </body>
 </html>
