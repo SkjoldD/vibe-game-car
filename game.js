@@ -295,7 +295,7 @@ window.addEventListener('DOMContentLoaded', function() {
         btn.onclick = function() {
             // Increase tree count and max rock size for next round and save
             let nextTreeCount = Math.round(treeCount * 1.5);
-            let nextMaxRockSize = Math.round(maxRockSize * 2.25 * 100) / 100; // round to 2 decimals
+            let nextMaxRockSize = Math.round(maxRockSize * 2.0 * 100) / 100; // round to 2 decimals
             localStorage.setItem('treeCount', nextTreeCount.toString());
             localStorage.setItem('maxRockSize', nextMaxRockSize.toString());
             location.reload();
@@ -403,7 +403,7 @@ window.addEventListener('DOMContentLoaded', function() {
             );
             const trailAlpha = 0.2 + 0.5 * speedRatio; // 0.2 (slow) to 0.7 (fast)
             // Create multiple trail marks per frame for higher density
-            const TRAIL_DENSITY = 3; // Number of trails per wheel per frame
+            const TRAIL_DENSITY = 2; // Number of trails per wheel per frame (reduced by half)
             for (let t = 0; t < TRAIL_DENSITY; t++) {
                 // Offset slightly backward for each trail
                 const offset = -t * (wheelSize * 0.18);
@@ -440,43 +440,32 @@ window.addEventListener('DOMContentLoaded', function() {
         }
 
         // --- Fire effect from tires ---
-        const FIRE_SPEED_THRESHOLD = originalMaxSpeed * 1.5; // start fire at 85% of max speed
+        const FIRE_SPEED_THRESHOLD = originalMaxSpeed * 1.8; // start fire at 85% of max speed
         const fireParticles = window._fireParticles || [];
         window._fireParticles = fireParticles;
         if (Math.abs(carSpeed) > FIRE_SPEED_THRESHOLD) {
-            // Number of squares per frame scales with speed
-            const firePerWheel = Math.ceil(Math.abs(carSpeed) / maxSpeed * 4); // up to 4 per wheel per frame
+            // Simplified: 1 fire particle per wheel per frame, fixed size, moves straight up
             for (const wheel of wheels) {
                 const wheelWorld = wheel.getAbsolutePosition();
-                for (let f = 0; f < firePerWheel; f++) {
-                    // Random size: 0.12 to 0.35
-                    const fireSize = 0.12 + Math.random()*0.23;
-                    const fire = BABYLON.MeshBuilder.CreateBox('fire', {size: fireSize}, scene);
-                    fire.position = wheelWorld.add(new BABYLON.Vector3((Math.random()-0.5)*0.13, 0.11 + Math.random()*0.04, (Math.random()-0.5)*0.13));
-                    fire.rotation.x = Math.random()*Math.PI*2;
-                    fire.rotation.y = Math.random()*Math.PI*2;
-                    fire.material = new BABYLON.StandardMaterial('fireMat', scene);
-                    // Flicker color: red/orange/yellow
-                    const c = Math.random();
-                    if (c < 0.5) {
-                        fire.material.diffuseColor = new BABYLON.Color3(1, 0.3 + Math.random()*0.4, 0);
-                    } else if (c < 0.8) {
-                        fire.material.diffuseColor = new BABYLON.Color3(1, 0.7, 0.1 + Math.random()*0.2);
-                    } else {
-                        fire.material.diffuseColor = new BABYLON.Color3(1, 1, 0.3 + Math.random()*0.2);
-                    }
-                    fire.material.emissiveColor = fire.material.diffuseColor;
-                    fire.material.alpha = 0.7;
-                    fire.isPickable = false;
-                    fire.checkCollisions = false;
-                    // Random velocity: x/z -0.02 to 0.02, y 0.01 to 0.04
-                    const velocity = new BABYLON.Vector3(
-                        (Math.random()-0.5)*0.04,
-                        0.01 + Math.random()*0.03,
-                        (Math.random()-0.5)*0.04
-                    );
-                    fireParticles.push({mesh: fire, ttl: 14 + Math.random()*6, velocity});
+                const fire = BABYLON.MeshBuilder.CreateBox('fire', {size: 1.76}, scene);
+                fire.position = wheelWorld.add(new BABYLON.Vector3((Math.random()-0.5)*0.13, 0.11, (Math.random()-0.5)*0.13));
+                fire.rotation.x = Math.random()*Math.PI*2;
+                fire.rotation.y = Math.random()*Math.PI*2;
+                fire.material = new BABYLON.StandardMaterial('fireMat', scene);
+                // Flicker color: red/orange/yellow
+                const c = Math.random();
+                if (c < 0.5) {
+                    fire.material.diffuseColor = new BABYLON.Color3(1, 0.3 + Math.random()*0.4, 0);
+                } else if (c < 0.8) {
+                    fire.material.diffuseColor = new BABYLON.Color3(1, 0.7, 0.1 + Math.random()*0.2);
+                } else {
+                    fire.material.diffuseColor = new BABYLON.Color3(1, 1, 0.3 + Math.random()*0.2);
                 }
+                fire.material.emissiveColor = fire.material.diffuseColor;
+                fire.material.alpha = 0.7;
+                fire.isPickable = false;
+                fire.checkCollisions = false;
+                fireParticles.push({mesh: fire, ttl: 14 + Math.random()*6});
             }
         }
         // Animate and fade fire particles
@@ -484,11 +473,7 @@ window.addEventListener('DOMContentLoaded', function() {
             const fp = fireParticles[i];
             fp.ttl--;
             fp.mesh.material.alpha *= 0.8;
-            if (fp.velocity) {
-                fp.mesh.position.addInPlace(fp.velocity);
-            } else {
-                fp.mesh.position.y += 0.01;
-            }
+            fp.mesh.position.y += 0.01;
             if (fp.ttl <= 0 || fp.mesh.material.alpha < 0.05) {
                 fp.mesh.dispose();
                 fireParticles.splice(i, 1);
